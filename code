@@ -3,7 +3,6 @@
 #include <iostream> //input/output dasar
 #include <string> //manipulasi string
 
-
 using namespace std;
 
 // Konstanta ukuran dimensi array
