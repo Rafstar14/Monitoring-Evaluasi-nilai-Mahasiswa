@@ -1,0 +1,776 @@
+#include <cmath> //operasi tingkat lanjut
+#include <iomanip> //input/output manipulasi
+#include <iostream> //input/output dasar
+#include <string> //manipulasi string
+
+
+using namespace std;
+
+// Konstanta ukuran dimensi array
+const int JML_KELAS = 3;
+const int JML_MHS = 5;
+const int JML_KOMPONEN = 4;
+const double EPSILON = 1e-9;
+
+// ==========================================
+// FUNGSI UTILITAS & PERHITUNGAN DASAR
+// ==========================================
+
+// Mengubah string menjadi huruf kecil untuk pencarian case-insensitive
+string keHurufKecil(string teks) {
+  for (size_t i = 0; i < teks.length(); i++) {
+    if (teks[i] >= 'A' && teks[i] <= 'Z') {
+      teks[i] = teks[i] + ('a' - 'A');
+    }
+  }
+  return teks;
+}
+
+// Membersihkan buffer input jika pengguna memasukkan karakter non-angka
+void bersihkanInput() {
+  cin.clear();
+  cin.ignore(10000, '\n');
+}
+
+// Menentukan grade berdasarkan nilai akhir
+char tentukanGrade(double nilaiAkhir) {
+  if (nilaiAkhir >= 85.0)
+    return 'A';
+  else if (nilaiAkhir >= 75.0)
+    return 'B';
+  else if (nilaiAkhir >= 65.0)
+    return 'C';
+  else if (nilaiAkhir >= 50.0)
+    return 'D';
+  else
+    return 'E';
+}
+
+// Menentukan status kelulusan berdasarkan nilai akhir
+string tentukanStatus(double nilaiAkhir) {
+  return (nilaiAkhir >= 65.0) ? "LULUS" : "TIDAK LULUS";
+}
+
+// Menghitung nilai akhir seluruh mahasiswa dan menyimpannya ke array 2D
+// nilaiAkhir
+void hitungSemuaNilaiAkhir(const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+                           const double bobot[JML_KOMPONEN],
+                           double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  for (int k = 0; k < JML_KELAS; k++) {
+    for (int m = 0; m < JML_MHS; m++) {
+      double total = 0.0;
+      for (int c = 0; c < JML_KOMPONEN; c++) {
+        total += nilai[k][m][c] * bobot[c];
+      }
+      nilaiAkhir[k][m] = total;
+    }
+  }
+}
+
+// Helper untuk memilih kelas dengan validasi
+int pilihKelas(const string namaKelas[JML_KELAS]) {
+  int pilihan;
+  cout << "\nPilih Kelas:\n";
+  for (int k = 0; k < JML_KELAS; k++) {
+    cout << (k + 1) << ". " << namaKelas[k] << "\n";
+  }
+  cout << "Masukkan pilihan kelas (1-" << JML_KELAS << "): ";
+  if (!(cin >> pilihan)) {
+    bersihkanInput();
+    return -1;
+  }
+  if (pilihan < 1 || pilihan > JML_KELAS) {
+    return -1;
+  }
+  return pilihan - 1; // Mengembalikan indeks 0-2
+}
+
+// ==========================================
+// FITUR 1: TAMPILKAN SELURUH DATA MAHASISWA
+// ==========================================
+void tampilkanSeluruhData(const string namaKelas[JML_KELAS],
+                          const string nama[JML_KELAS][JML_MHS],
+                          const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN]) {
+  for (int k = 0; k < JML_KELAS; k++) {
+    cout << "\n=============================================\n";
+    cout << "           DATA MAHASISWA KELAS " << namaKelas[k] << "\n";
+    cout << "=============================================\n";
+    cout << left << setw(4) << "No" << setw(12) << "Nama" << right << setw(7)
+         << "Tugas" << setw(7) << "Kuis" << setw(7) << "UTS" << setw(7) << "UAS"
+         << "\n";
+    cout << "---------------------------------------------\n";
+
+    for (int m = 0; m < JML_MHS; m++) {
+      cout << left << setw(4) << (m + 1) << setw(12) << nama[k][m];
+      for (int c = 0; c < JML_KOMPONEN; c++) {
+        cout << right << setw(7) << nilai[k][m][c];
+      }
+      cout << "\n";
+    }
+    cout << "---------------------------------------------\n";
+  }
+}
+
+// ==========================================
+// FITUR 2: TAMPILKAN DATA BERDASARKAN KELAS
+// ==========================================
+void tampilkanDataPerKelas(const string namaKelas[JML_KELAS],
+                           const string nama[JML_KELAS][JML_MHS],
+                           const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN]) {
+  int idxKelas = pilihKelas(namaKelas);
+  if (idxKelas == -1) {
+    cout << "\n[!] Pilihan kelas tidak valid.\n";
+    return;
+  }
+
+  cout << "\n=============================================\n";
+  cout << "           DATA MAHASISWA KELAS " << namaKelas[idxKelas] << "\n";
+  cout << "=============================================\n";
+  cout << left << setw(4) << "No" << setw(12) << "Nama" << right << setw(7)
+       << "Tugas" << setw(7) << "Kuis" << setw(7) << "UTS" << setw(7) << "UAS"
+       << "\n";
+  cout << "---------------------------------------------\n";
+
+  for (int m = 0; m < JML_MHS; m++) {
+    cout << left << setw(4) << (m + 1) << setw(12) << nama[idxKelas][m];
+    for (int c = 0; c < JML_KOMPONEN; c++) {
+      cout << right << setw(7) << nilai[idxKelas][m][c];
+    }
+    cout << "\n";
+  }
+  cout << "---------------------------------------------\n";
+}
+
+// ==========================================
+// FITUR 3: HITUNG DAN TAMPILKAN NILAI AKHIR
+// ==========================================
+void tampilkanNilaiAkhir(const string namaKelas[JML_KELAS],
+                         const string nama[JML_KELAS][JML_MHS],
+                         const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+                         const double bobot[JML_KOMPONEN],
+                         double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  hitungSemuaNilaiAkhir(nilai, bobot, nilaiAkhir);
+
+  cout << fixed << setprecision(2);
+  for (int k = 0; k < JML_KELAS; k++) {
+    cout << "\n=============================================\n";
+    cout << "       LAPORAN NILAI AKHIR KELAS " << namaKelas[k] << "\n";
+    cout << "=============================================\n";
+    cout << left << setw(4) << "No" << setw(10) << "Nama" << right << setw(12)
+         << "Nilai Akhir"
+         << "   " << left << setw(7) << "Grade"
+         << "Status\n";
+    cout << "---------------------------------------------\n";
+
+    for (int m = 0; m < JML_MHS; m++) {
+      double na = nilaiAkhir[k][m];
+      char grade = tentukanGrade(na);
+      string status = tentukanStatus(na);
+
+      cout << left << setw(4) << (m + 1) << setw(10) << nama[k][m] << right
+           << setw(10) << na << "     " << left << setw(7) << grade << status
+           << "\n";
+    }
+    cout << "---------------------------------------------\n";
+  }
+}
+
+// ==========================================
+// FITUR 4: PENCARIAN MAHASISWA
+// ==========================================
+void cariMahasiswa(const string namaKelas[JML_KELAS],
+                   const string nama[JML_KELAS][JML_MHS],
+                   const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+                   const double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  string target;
+  cout << "\nMasukkan nama mahasiswa yang ingin dicari: ";
+  cin >> ws;
+  getline(cin, target);
+
+  string targetKecil = keHurufKecil(target);
+  bool ditemukan = false;
+
+  cout << fixed << setprecision(2);
+  for (int k = 0; k < JML_KELAS; k++) {
+    for (int m = 0; m < JML_MHS; m++) {
+      if (keHurufKecil(nama[k][m]) == targetKecil) {
+        ditemukan = true;
+        double na = nilaiAkhir[k][m];
+        cout << "\n========================================\n";
+        cout << "         DATA MAHASISWA DITEMUKAN       \n";
+        cout << "========================================\n";
+        cout << "Nama Mahasiswa   : " << nama[k][m] << "\n";
+        cout << "Nama Kelas       : " << namaKelas[k] << "\n";
+        cout << "Nilai Tugas      : " << nilai[k][m][0] << "\n";
+        cout << "Nilai Kuis       : " << nilai[k][m][1] << "\n";
+        cout << "Nilai UTS        : " << nilai[k][m][2] << "\n";
+        cout << "Nilai UAS        : " << nilai[k][m][3] << "\n";
+        cout << "Nilai Akhir      : " << na << "\n";
+        cout << "Grade            : " << tentukanGrade(na) << "\n";
+        cout << "Status Kelulusan : " << tentukanStatus(na) << "\n";
+        cout << "========================================\n";
+      }
+    }
+  }
+
+  if (!ditemukan) {
+    cout << "\nMahasiswa tidak ditemukan\n";
+  }
+}
+
+// ==========================================
+// FITUR 5: MENGUBAH NILAI MAHASISWA
+// ==========================================
+void ubahNilaiMahasiswa(const string namaKelas[JML_KELAS],
+                        const string namaKomponen[JML_KOMPONEN],
+                        const string nama[JML_KELAS][JML_MHS],
+                        int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+                        const double bobot[JML_KOMPONEN],
+                        double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  // 1. Pilih kelas
+  int idxKelas = pilihKelas(namaKelas);
+  if (idxKelas == -1) {
+    cout << "\n[!] Pilihan kelas tidak valid.\n";
+    return;
+  }
+
+  // 2. Pilih mahasiswa
+  cout << "\nDaftar Mahasiswa Kelas " << namaKelas[idxKelas] << ":\n";
+  for (int m = 0; m < JML_MHS; m++) {
+    cout << (m + 1) << ". " << nama[idxKelas][m] << "\n";
+  }
+  int pilihMhs;
+  cout << "Pilih nomor mahasiswa (1-" << JML_MHS << "): ";
+  if (!(cin >> pilihMhs) || pilihMhs < 1 || pilihMhs > JML_MHS) {
+    bersihkanInput();
+    cout << "\n[!] Pilihan mahasiswa tidak valid.\n";
+    return;
+  }
+  int idxMhs = pilihMhs - 1;
+
+  // 3. Pilih komponen nilai
+  cout << "\nPilih Komponen Nilai yang Akan Diubah:\n";
+  for (int c = 0; c < JML_KOMPONEN; c++) {
+    cout << (c + 1) << ". " << namaKomponen[c]
+         << " (Nilai saat ini: " << nilai[idxKelas][idxMhs][c] << ")\n";
+  }
+  int pilihKomp;
+  cout << "Masukkan pilihan komponen (1-" << JML_KOMPONEN << "): ";
+  if (!(cin >> pilihKomp) || pilihKomp < 1 || pilihKomp > JML_KOMPONEN) {
+    bersihkanInput();
+    cout << "\n[!] Pilihan komponen tidak valid.\n";
+    return;
+  }
+  int idxKomp = pilihKomp - 1;
+
+  // 4. Masukkan nilai baru dengan validasi rentang 0 - 100
+  int nilaiBaru;
+  cout << "Masukkan nilai baru untuk " << namaKomponen[idxKomp] << " (0-100): ";
+  if (!(cin >> nilaiBaru) || nilaiBaru < 0 || nilaiBaru > 100) {
+    bersihkanInput();
+    cout << "\n[!] Nilai tidak valid! Nilai harus berada pada rentang 0 sampai "
+            "100.\n";
+    return;
+  }
+
+  int nilaiLama = nilai[idxKelas][idxMhs][idxKomp];
+
+  // 5. Simpan perubahan pada array 3D
+  nilai[idxKelas][idxMhs][idxKomp] = nilaiBaru;
+
+  // 6. Hitung ulang nilai akhir
+  hitungSemuaNilaiAkhir(nilai, bobot, nilaiAkhir);
+  double naBaru = nilaiAkhir[idxKelas][idxMhs];
+
+  cout << fixed << setprecision(2);
+  cout << "\n[✓] Nilai berhasil diperbarui!\n";
+  cout << "Mahasiswa        : " << nama[idxKelas][idxMhs] << " ("
+       << namaKelas[idxKelas] << ")\n";
+  cout << "Komponen         : " << namaKomponen[idxKomp] << " (" << nilaiLama
+       << " -> " << nilaiBaru << ")\n";
+  cout << "Nilai Akhir Baru : " << naBaru << "\n";
+  cout << "Grade Baru       : " << tentukanGrade(naBaru) << "\n";
+  cout << "Status Baru      : " << tentukanStatus(naBaru) << "\n";
+}
+
+// ==========================================
+// FITUR 6: MENAMPILKAN PERINGKAT MAHASISWA
+// ==========================================
+void tampilkanPeringkatKelas(const string namaKelas[JML_KELAS],
+                             const string nama[JML_KELAS][JML_MHS],
+                             const double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  int idxKelas = pilihKelas(namaKelas);
+  if (idxKelas == -1) {
+    cout << "\n[!] Pilihan kelas tidak valid.\n";
+    return;
+  }
+
+  // Menyalin data ke array lokal agar urutan asli pada array utama tetap
+  // terjaga
+  string urutNama[JML_MHS];
+  double urutNilai[JML_MHS];
+
+  for (int m = 0; m < JML_MHS; m++) {
+    urutNama[m] = nama[idxKelas][m];
+    urutNilai[m] = nilaiAkhir[idxKelas][m];
+  }
+
+  // Algoritma Bubble Sort Manual (Descending berdasarkan nilai, Ascending
+  // alfabetis jika seri)
+  for (int i = 0; i < JML_MHS - 1; i++) {
+    for (int j = 0; j < JML_MHS - i - 1; j++) {
+      bool perluTukar = false;
+      if (urutNilai[j] < urutNilai[j + 1] - EPSILON) {
+        perluTukar = true;
+      } else if (fabs(urutNilai[j] - urutNilai[j + 1]) <= EPSILON) {
+        // Jika nilai akhir sama, urutkan nama secara alfabetis (A-Z)
+        if (keHurufKecil(urutNama[j]) > keHurufKecil(urutNama[j + 1])) {
+          perluTukar = true;
+        }
+      }
+
+      if (perluTukar) {
+        double tempNilai = urutNilai[j];
+        urutNilai[j] = urutNilai[j + 1];
+        urutNilai[j + 1] = tempNilai;
+
+        string tempNama = urutNama[j];
+        urutNama[j] = urutNama[j + 1];
+        urutNama[j + 1] = tempNama;
+      }
+    }
+  }
+
+  cout << fixed << setprecision(2);
+  cout << "\n====================================================\n";
+  cout << "          PERINGKAT MAHASISWA KELAS " << namaKelas[idxKelas] << "\n";
+  cout << "====================================================\n";
+  cout << left << setw(11) << "Peringkat" << setw(12) << "Nama" << right
+       << setw(12) << "Nilai Akhir"
+       << "   " << left << setw(7) << "Grade"
+       << "Status\n";
+  cout << "----------------------------------------------------\n";
+
+  for (int m = 0; m < JML_MHS; m++) {
+    cout << left << setw(11) << (m + 1) << setw(12) << urutNama[m] << right
+         << setw(10) << urutNilai[m] << "     " << left << setw(7)
+         << tentukanGrade(urutNilai[m]) << tentukanStatus(urutNilai[m]) << "\n";
+  }
+  cout << "----------------------------------------------------\n";
+}
+
+// ==========================================
+// FITUR 7: ANALISIS STATISTIK PER KELAS
+// ==========================================
+void analisisStatistikPerKelas(
+    const string namaKelas[JML_KELAS], const string namaKomponen[JML_KOMPONEN],
+    const string nama[JML_KELAS][JML_MHS],
+    const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+    const double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  int idxKelas = pilihKelas(namaKelas);
+  if (idxKelas == -1) {
+    cout << "\n[!] Pilihan kelas tidak valid.\n";
+    return;
+  }
+
+  double maksNA = nilaiAkhir[idxKelas][0];
+  double minNA = nilaiAkhir[idxKelas][0];
+  double totalNA = 0.0;
+  int jmlLulus = 0;
+  int jmlTidakLulus = 0;
+  double rataKomponen[JML_KOMPONEN] = {0.0, 0.0, 0.0, 0.0};
+
+  for (int m = 0; m < JML_MHS; m++) {
+    double na = nilaiAkhir[idxKelas][m];
+    if (na > maksNA)
+      maksNA = na;
+    if (na < minNA)
+      minNA = na;
+    totalNA += na;
+
+    if (na >= 65.0)
+      jmlLulus++;
+    else
+      jmlTidakLulus++;
+
+    for (int c = 0; c < JML_KOMPONEN; c++) {
+      rataKomponen[c] += nilai[idxKelas][m][c];
+    }
+  }
+
+  for (int c = 0; c < JML_KOMPONEN; c++) {
+    rataKomponen[c] /= JML_MHS;
+  }
+
+  // Mencari rata-rata komponen terendah
+  double minRataKomp = rataKomponen[0];
+  for (int c = 1; c < JML_KOMPONEN; c++) {
+    if (rataKomponen[c] < minRataKomp) {
+      minRataKomp = rataKomponen[c];
+    }
+  }
+
+  cout << fixed << setprecision(2);
+  cout << "\n====================================================\n";
+  cout << "         ANALISIS STATISTIK KELAS " << namaKelas[idxKelas] << "\n";
+  cout << "====================================================\n";
+
+  // 1. Nilai akhir tertinggi beserta nama mahasiswa
+  cout << "1. Nilai Akhir Tertinggi : " << maksNA << " (";
+  bool pertama = true;
+  for (int m = 0; m < JML_MHS; m++) {
+    if (fabs(nilaiAkhir[idxKelas][m] - maksNA) <= EPSILON) {
+      if (!pertama)
+        cout << ", ";
+      cout << nama[idxKelas][m];
+      pertama = false;
+    }
+  }
+  cout << ")\n";
+
+  // 2. Nilai akhir terendah beserta nama mahasiswa
+  cout << "2. Nilai Akhir Terendah  : " << minNA << " (";
+  pertama = true;
+  for (int m = 0; m < JML_MHS; m++) {
+    if (fabs(nilaiAkhir[idxKelas][m] - minNA) <= EPSILON) {
+      if (!pertama)
+        cout << ", ";
+      cout << nama[idxKelas][m];
+      pertama = false;
+    }
+  }
+  cout << ")\n";
+
+  // 3 - 9. Statistik nilai dan komponen
+  cout << "3. Rata-rata Nilai Akhir : " << (totalNA / JML_MHS) << "\n";
+  cout << "4. Jumlah Mahasiswa Lulus: " << jmlLulus << " mahasiswa\n";
+  cout << "5. Jumlah Tidak Lulus    : " << jmlTidakLulus << " mahasiswa\n";
+  cout << "6. Rata-rata Nilai Tugas : " << rataKomponen[0] << "\n";
+  cout << "7. Rata-rata Nilai Kuis  : " << rataKomponen[1] << "\n";
+  cout << "8. Rata-rata Nilai UTS   : " << rataKomponen[2] << "\n";
+  cout << "9. Rata-rata Nilai UAS   : " << rataKomponen[3] << "\n";
+
+  // 10. Komponen penilaian dengan rata-rata terendah
+  cout << "10. Komponen Rata-rata Terendah: ";
+  pertama = true;
+  for (int c = 0; c < JML_KOMPONEN; c++) {
+    if (fabs(rataKomponen[c] - minRataKomp) <= EPSILON) {
+      if (!pertama)
+        cout << ", ";
+      cout << namaKomponen[c] << " (" << rataKomponen[c] << ")";
+      pertama = false;
+    }
+  }
+  cout << "\n====================================================\n";
+}
+
+// ==========================================
+// FITUR 8: ANALISIS SELURUH KELAS
+// ==========================================
+void analisisSeluruhKelas(const string namaKelas[JML_KELAS],
+                          const string nama[JML_KELAS][JML_MHS],
+                          const double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  double rataKelas[JML_KELAS] = {0.0, 0.0, 0.0};
+  int totalLulus = 0;
+  int totalTidakLulus = 0;
+  int totalMahasiswa = JML_KELAS * JML_MHS;
+
+  double maksGlobal = nilaiAkhir[0][0];
+  double minGlobal = nilaiAkhir[0][0];
+
+  for (int k = 0; k < JML_KELAS; k++) {
+    double jumlahSeKelas = 0.0;
+    for (int m = 0; m < JML_MHS; m++) {
+      double na = nilaiAkhir[k][m];
+      jumlahSeKelas += na;
+
+      if (na >= 65.0)
+        totalLulus++;
+      else
+        totalTidakLulus++;
+
+      if (na > maksGlobal)
+        maksGlobal = na;
+      if (na < minGlobal)
+        minGlobal = na;
+    }
+    rataKelas[k] = jumlahSeKelas / JML_MHS;
+  }
+
+  double maksRataKelas = rataKelas[0];
+  for (int k = 1; k < JML_KELAS; k++) {
+    if (rataKelas[k] > maksRataKelas) {
+      maksRataKelas = rataKelas[k];
+    }
+  }
+
+  double persentaseLulus =
+      (static_cast<double>(totalLulus) / totalMahasiswa) * 100.0;
+
+  cout << fixed << setprecision(2);
+  cout << "\n========================================================\n";
+  cout << "             ANALISIS AKADEMIK SELURUH KELAS            \n";
+  cout << "========================================================\n";
+  cout << "1. Rata-rata Nilai Akhir Kelas TI-1A : " << rataKelas[0] << "\n";
+  cout << "2. Rata-rata Nilai Akhir Kelas TI-1B : " << rataKelas[1] << "\n";
+  cout << "3. Rata-rata Nilai Akhir Kelas TI-1C : " << rataKelas[2] << "\n";
+
+  cout << "4. Kelas Rata-rata Tertinggi         : ";
+  bool pertama = true;
+  for (int k = 0; k < JML_KELAS; k++) {
+    if (fabs(rataKelas[k] - maksRataKelas) <= EPSILON) {
+      if (!pertama)
+        cout << ", ";
+      cout << namaKelas[k] << " (" << rataKelas[k] << ")";
+      pertama = false;
+    }
+  }
+  cout << "\n";
+
+  cout << "5. Jumlah Seluruh Mahasiswa Lulus    : " << totalLulus
+       << " mahasiswa\n";
+  cout << "6. Jumlah Seluruh Tidak Lulus        : " << totalTidakLulus
+       << " mahasiswa\n";
+  cout << "7. Persentase Kelulusan Total        : " << persentaseLulus << "%\n";
+
+  cout << "8. Mahasiswa Nilai Akhir Tertinggi   : (" << maksGlobal << ")\n";
+  for (int k = 0; k < JML_KELAS; k++) {
+    for (int m = 0; m < JML_MHS; m++) {
+      if (fabs(nilaiAkhir[k][m] - maksGlobal) <= EPSILON) {
+        cout << "   - " << nama[k][m] << " (" << namaKelas[k] << ")\n";
+      }
+    }
+  }
+
+  cout << "9. Mahasiswa Nilai Akhir Terendah    : (" << minGlobal << ")\n";
+  for (int k = 0; k < JML_KELAS; k++) {
+    for (int m = 0; m < JML_MHS; m++) {
+      if (fabs(nilaiAkhir[k][m] - minGlobal) <= EPSILON) {
+        cout << "   - " << nama[k][m] << " (" << namaKelas[k] << ")\n";
+      }
+    }
+  }
+  cout << "========================================================\n";
+}
+
+// ==========================================
+// FITUR 9: MENAMPILKAN MAHASISWA REMEDIAL
+// ==========================================
+void tampilkanMahasiswaRemedial(
+    const string namaKelas[JML_KELAS], const string namaKomponen[JML_KOMPONEN],
+    const string nama[JML_KELAS][JML_MHS],
+    const int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN],
+    const double nilaiAkhir[JML_KELAS][JML_MHS]) {
+  const int MAKS_TOTAL = JML_KELAS * JML_MHS;
+  int idxKelasRem[MAKS_TOTAL];
+  int idxMhsRem[MAKS_TOTAL];
+  int jmlRemedial = 0;
+
+  // Mengumpulkan mahasiswa dengan nilai akhir < 65
+  for (int k = 0; k < JML_KELAS; k++) {
+    for (int m = 0; m < JML_MHS; m++) {
+      if (nilaiAkhir[k][m] < 65.0) {
+        idxKelasRem[jmlRemedial] = k;
+        idxMhsRem[jmlRemedial] = m;
+        jmlRemedial++;
+      }
+    }
+  }
+
+  cout << "\n=================================================================="
+          "==\n";
+  cout << "                     DAFTAR MAHASISWA REMEDIAL                      "
+          "\n";
+  cout << "===================================================================="
+          "\n";
+
+  if (jmlRemedial == 0) {
+    cout << "Tidak ada mahasiswa yang perlu mengikuti remedial.\n";
+    cout << "=================================================================="
+            "==\n";
+    return;
+  }
+
+  // Mengurutkan mahasiswa remedial dari nilai akhir terendah ke tertinggi
+  // (Bubble Sort manual)
+  for (int i = 0; i < jmlRemedial - 1; i++) {
+    for (int j = 0; j < jmlRemedial - i - 1; j++) {
+      int k1 = idxKelasRem[j], m1 = idxMhsRem[j];
+      int k2 = idxKelasRem[j + 1], m2 = idxMhsRem[j + 1];
+
+      bool perluTukar = false;
+      if (nilaiAkhir[k1][m1] > nilaiAkhir[k2][m2] + EPSILON) {
+        perluTukar = true;
+      } else if (fabs(nilaiAkhir[k1][m1] - nilaiAkhir[k2][m2]) <= EPSILON) {
+        if (keHurufKecil(nama[k1][m1]) > keHurufKecil(nama[k2][m2])) {
+          perluTukar = true;
+        }
+      }
+
+      if (perluTukar) {
+        int tempK = idxKelasRem[j];
+        idxKelasRem[j] = idxKelasRem[j + 1];
+        idxKelasRem[j + 1] = tempK;
+
+        int tempM = idxMhsRem[j];
+        idxMhsRem[j] = idxMhsRem[j + 1];
+        idxMhsRem[j + 1] = tempM;
+      }
+    }
+  }
+
+  cout << fixed << setprecision(2);
+  cout << left << setw(4) << "No" << setw(12) << "Nama" << setw(8) << "Kelas"
+       << right << setw(12) << "Nilai Akhir"
+       << "   " << left << "Komponen Nilai Terendah\n";
+  cout << "--------------------------------------------------------------------"
+          "\n";
+
+  for (int i = 0; i < jmlRemedial; i++) {
+    int k = idxKelasRem[i];
+    int m = idxMhsRem[i];
+
+    // Mencari nilai komponen paling rendah milik mahasiswa tersebut
+    int minNilaiKomp = nilai[k][m][0];
+    for (int c = 1; c < JML_KOMPONEN; c++) {
+      if (nilai[k][m][c] < minNilaiKomp) {
+        minNilaiKomp = nilai[k][m][c];
+      }
+    }
+
+    // Menggabungkan semua komponen yang memiliki nilai terendah tersebut
+    string daftarKomponenRendah = "";
+    for (int c = 0; c < JML_KOMPONEN; c++) {
+      if (nilai[k][m][c] == minNilaiKomp) {
+        if (!daftarKomponenRendah.empty()) {
+          daftarKomponenRendah += ", ";
+        }
+        daftarKomponenRendah +=
+            namaKomponen[c] + " (" + to_string(nilai[k][m][c]) + ")";
+      }
+    }
+
+    cout << left << setw(4) << (i + 1) << setw(12) << nama[k][m] << setw(8)
+         << namaKelas[k] << right << setw(12) << nilaiAkhir[k][m] << "   "
+         << left << daftarKomponenRendah << "\n";
+  }
+  cout << "===================================================================="
+          "\n";
+}
+
+// ==========================================
+// FUNGSI UTAMA (MAIN)
+// ==========================================
+int main() {
+  // A. Array Satu Dimensi (1D)
+  string namaKelas[JML_KELAS] = {"TI-1A", "TI-1B", "TI-1C"};
+
+  double bobot[JML_KOMPONEN] = {0.20, 0.20, 0.25, 0.35};
+
+  string namaKomponen[JML_KOMPONEN] = {"Tugas", "Kuis", "UTS", "UAS"};
+
+  // B. Array Dua Dimensi (2D)
+  string nama[JML_KELAS][JML_MHS] = {
+      {"Andi", "Budi", "Citra", "Deni", "Eka"},
+      {"Farhan", "Gina", "Hadi", "Intan", "Joko"},
+      {"Karin", "Lukman", "Maya", "Nanda", "Oki"}};
+
+  double nilaiAkhir[JML_KELAS][JML_MHS];
+
+  // C. Array Tiga Dimensi (3D) - Data Awal Mahasiswa
+  int nilai[JML_KELAS][JML_MHS][JML_KOMPONEN] = {// Kelas TI-1A
+                                                 {
+                                                     {80, 85, 78, 90}, // Andi
+                                                     {70, 75, 68, 72}, // Budi
+                                                     {90, 88, 92, 95}, // Citra
+                                                     {60, 65, 58, 62}, // Deni
+                                                     {85, 80, 82, 88}  // Eka
+                                                 },
+                                                 // Kelas TI-1B
+                                                 {
+                                                     {78, 80, 75, 82}, // Farhan
+                                                     {95, 90, 93, 96}, // Gina
+                                                     {65, 70, 60, 68}, // Hadi
+                                                     {88, 85, 87, 90}, // Intan
+                                                     {55, 60, 58, 50}  // Joko
+                                                 },
+                                                 // Kelas TI-1C
+                                                 {
+                                                     {82, 84, 80, 86}, // Karin
+                                                     {75, 78, 72, 76}, // Lukman
+                                                     {92, 94, 90, 93}, // Maya
+                                                     {68, 65, 70, 72}, // Nanda
+                                                     {80, 76, 78, 82}  // Oki
+                                                 }};
+
+  // Hitung nilai akhir awal saat aplikasi pertama kali dijalankan
+  hitungSemuaNilaiAkhir(nilai, bobot, nilaiAkhir);
+
+  int pilihanMenu;
+  do {
+    cout << "\n========================================\n";
+    cout << " SISTEM MONITORING NILAI MAHASISWA\n";
+    cout << "========================================\n";
+    cout << "1. Tampilkan Seluruh Data Mahasiswa\n";
+    cout << "2. Tampilkan Nilai Berdasarkan Kelas\n";
+    cout << "3. Hitung dan Tampilkan Nilai Akhir\n";
+    cout << "4. Cari Mahasiswa\n";
+    cout << "5. Ubah Nilai Mahasiswa\n";
+    cout << "6. Tampilkan Peringkat Mahasiswa\n";
+    cout << "7. Analisis Statistik Per Kelas\n";
+    cout << "8. Analisis Seluruh Kelas\n";
+    cout << "9. Tampilkan Mahasiswa Remedial\n";
+    cout << "0. Keluar\n";
+    cout << "========================================\n";
+    cout << "Pilih Menu: ";
+
+    if (!(cin >> pilihanMenu)) {
+      bersihkanInput();
+      cout << "\n[!] Input tidak valid. Masukkan angka 0 sampai 9.\n";
+      pilihanMenu = -1;
+      continue;
+    }
+
+    switch (pilihanMenu) {
+    case 1:
+      tampilkanSeluruhData(namaKelas, nama, nilai);
+      break;
+    case 2:
+      tampilkanDataPerKelas(namaKelas, nama, nilai);
+      break;
+    case 3:
+      tampilkanNilaiAkhir(namaKelas, nama, nilai, bobot, nilaiAkhir);
+      break;
+    case 4:
+      cariMahasiswa(namaKelas, nama, nilai, nilaiAkhir);
+      break;
+    case 5:
+      ubahNilaiMahasiswa(namaKelas, namaKomponen, nama, nilai, bobot,
+                         nilaiAkhir);
+      break;
+    case 6:
+      tampilkanPeringkatKelas(namaKelas, nama, nilaiAkhir);
+      break;
+    case 7:
+      analisisStatistikPerKelas(namaKelas, namaKomponen, nama, nilai,
+                                nilaiAkhir);
+      break;
+    case 8:
+      analisisSeluruhKelas(namaKelas, nama, nilaiAkhir);
+      break;
+    case 9:
+      tampilkanMahasiswaRemedial(namaKelas, namaKomponen, nama, nilai,
+                                 nilaiAkhir);
+      break;
+    case 0:
+      cout << "\nTerima kasih telah menggunakan Sistem Monitoring Nilai "
+              "Mahasiswa.\n";
+      break;
+    default:
+      cout << "\n[!] Pilihan menu tidak tersedia. Silakan pilih 0 sampai 9.\n";
+      break;
+    }
+  } while (pilihanMenu != 0);
+
+  return 0;
+}
